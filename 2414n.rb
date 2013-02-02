@@ -27,17 +27,17 @@ EOF
 end
 
 # get commandline options
-$controller = ARGV[0]
-$device = ARGV[1]
-$command = ARGV[2]
-$level = ARGV[3]
 OptionParser.new do |o|
   o.on('-u S', 'Username') { |b| $username = b }
   o.on('-p S', 'Password') { |b| $password = b }
   o.parse!
 end
+$controller = ARGV[0]
+$device = ARGV[1]
+$command = ARGV[2]
+$level = ARGV[3]
 
-# validate site
+# validate controller
 if ! $controller
   usage "Missing controller."
 end
@@ -101,7 +101,7 @@ when 'fastoff'
   end
 when 'status'
   $code = 19
-  $level = 100
+  $level = 0
 else
   usage "Invalid or unknown command."
 end
@@ -110,7 +110,10 @@ end
 $level = sprintf "%-02X" % ($level *2.55).round
 
 # request url
-rs = open($controller + '3?0262' + $device + '0F' + String($code) + String($level) + '=I=3')
+rs = open(
+  $controller + '3?0262' + $device + '0F' + String($code) + String($level) + '=I=3',
+ :http_basic_authentication => [$username, $password]
+)
 if rs.status[0] != '200'
   raise rs.status[0] + ' ' + rs.status[1]
 end
@@ -118,7 +121,7 @@ end
 # check status
 if $command == 'status'
   sleep(0.5)
-  rs = open($controller + 'buffstatus.xml'){ |f|
+  rs = open($controller + 'buffstatus.xml', :http_basic_authentication => [$username, $password]) { |f|
     str = f.read()
     if str !~ /^<response><BS>([0-9|A-F]{16})(06|15)0250([0-9|A-F]{6})([0-9|A-F]{6})2([0-9|A-F])([0-9|A-F]{2})([0-9|A-F]{2})/
       raise "Error parsing response."
