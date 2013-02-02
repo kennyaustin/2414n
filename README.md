@@ -13,8 +13,8 @@ Commandline interface to Insteon devices via SmartLinc 2414N
 * `device` hardware address
 * `command` is  `on`, `faston`, `off`, `fastoff`, or `status`, defaults to `status`
 *  `level` brightness level `0 - 100`, optional
-*  `-u` http username, optional
-*  `-p` http password, optional
+*  `-u <username>` http username, optional
+*  `-p <password>` http password, optional
 
 **Examples**:
 
