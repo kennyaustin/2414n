@@ -13,7 +13,7 @@ def usage(why = nil)
   end
   
   $stderr.puts <<-EOF
-Usage: #{__FILE__} controller device command level [options]
+Usage: #{__FILE__} <controller> <device> <command> <level> [<options>]
 
 Options:
   controller  controller address of Insteon SmartLinc 2414N
