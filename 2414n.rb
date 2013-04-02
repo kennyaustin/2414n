@@ -6,6 +6,7 @@
 
 require 'open-uri'
 require 'optparse'
+require 'yaml'
 
 def usage(why = nil)
   if why
@@ -13,29 +14,80 @@ def usage(why = nil)
   end
   
   $stderr.puts <<-EOF
-Usage: #{__FILE__} <controller> <device> <command> <level> [<options>]
+Usage: #{__FILE__} <device> <command> <level> [<options>]
 
 Options:
-  controller  controller address of Insteon SmartLinc 2414N
   device      device hardware address
   command     optional, on|faston|off|fastoff|status  default=status
   level       optional, brightness level 0-100
+  -c          address of Insteon SmartLinc 2414N controller
   -u          optional, http username
   -p          optional, http password
+  -n          create new config file at ~/.2414n.yaml
+  
+Contoller, username, password, and device aliases can be stored in ~/.2414n.yaml
 EOF
 	exit(1)
 end
 
+# read options from config file
+if File.exists?(File.expand_path('~/.2414n.yaml'))
+  $config = YAML::load(File.open(File.expand_path('~/.2414n.yaml')))
+  if $config and $config['controller']
+    if $config['controller']['address']
+      $controller = $config['controller']['address']
+    end
+    if $config['controller']['username']
+      $username = $config['controller']['username']
+    end
+    if $config['controller']['password']
+      $password = $config['controller']['password']
+    end
+  end
+end
+
 # get commandline options
 OptionParser.new do |o|
+  o.on('-n', 'Create config') { |n| $create_config = n }
+  o.on('-c S', 'Controller') { |b| $controller = b }
   o.on('-u S', 'Username') { |b| $username = b }
   o.on('-p S', 'Password') { |b| $password = b }
   o.parse!
 end
-$controller = ARGV[0]
-$device = ARGV[1]
-$command = ARGV[2]
-$level = ARGV[3]
+$device = ARGV[0]
+$command = ARGV[1]
+$level = ARGV[2]
+
+
+# create new config?
+if $create_config
+  if ! $config
+    $config = {}
+  end
+  if ! $config['controller']
+    $config['controller'] = {}
+  end
+  if ! $config['controller']['address']
+    $config['controller']['address'] = $controller
+  end
+  if ! $config['controller']['username']
+    $config['controller']['username'] = $username
+  end
+  if ! $config['controller']['password']
+    $config['controller']['password'] = $password
+  end
+  if ! $config['devices']
+    $config['devices'] = {}
+  end
+  if ! $config['devices']['device1']
+    $config['devices']['device1'] = 'AB.CD.EF'
+  end
+  
+  File.open(File.expand_path('~/.2414n.yaml'), 'w+') {|f|
+    f.write($config.to_yaml) 
+  }
+  exit;
+end
 
 # validate controller
 if ! $controller
@@ -46,6 +98,11 @@ if $controller !~ /^https?:\/\//i
 end
 if $controller !~ /\/$/
   $controller += '/'
+end
+
+# substitute cli device with address from config
+if $config and $config['devices'] and $config['devices'][$device]
+  $device = $config['devices'][$device]
 end
 
 # validate device id
