@@ -164,7 +164,7 @@ else
 end
 
 # convert level to hex
-$level = sprintf "%-02X" % ($level *2.55).round
+$level = sprintf "%02X" % ($level *2.55).round
 
 # request url
 rs = open(
